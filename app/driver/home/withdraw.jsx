@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Image, Pressable, ScrollView, Text, View } from 'react-native'
 import style from '../../../style/rider/home/saved';
 import { AntDesign } from '@expo/vector-icons';
@@ -9,7 +9,7 @@ import checkoffImage from '../../../assets/images/checkoff.png';
 import { useTheme } from '../../../hooks/themeContext';
 import { useRouter } from 'expo-router';
 
-const withdraw = () => {
+const Withdraw = () => {
     const arr = [1]
     const router = useRouter()
     const { isDarkTheme } = useTheme();
@@ -104,4 +104,4 @@ const withdraw = () => {
     )
 }
 
-export default withdraw
+export default Withdraw

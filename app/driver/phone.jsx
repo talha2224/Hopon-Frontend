@@ -37,9 +37,9 @@ const phone = () => {
             </View>
 
 
-            <View style={[nameStyle.btn, { width: "100%" }]}>
-                <Text onPress={onSave} style={nameStyle.btnTxt}>Continue</Text>
-            </View>
+            <Pressable onPress={onSave} style={[nameStyle.btn, { width: "100%" }]}>
+                <Text style={nameStyle.btnTxt}>Continue</Text>
+            </Pressable>
 
         </View>
     )

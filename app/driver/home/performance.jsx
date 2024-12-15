@@ -1,11 +1,14 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import {ScrollView, Text, View } from 'react-native'
 import { Svg, Rect, Text as SvgText } from 'react-native-svg';
 import BottomNav2 from '../../../components/BottomNav2'
 import { AntDesign } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import devConfig from '../../../config';
+import axios from 'axios';
 
-const performance = () => {
+const Performance = () => {
 
 
     const router = useRouter()
@@ -20,6 +23,25 @@ const performance = () => {
     ];
     const barWidth = 30;
     const chartHeight = 200
+
+    const [walletData, setWalletData] = useState([])
+    useEffect(() => {
+        const getWalletHistory = async () => {
+            try {
+                let driverId = await AsyncStorage.getItem('driverId');
+                const res = await axios.get(`${devConfig.baseUrl}/wallet/history/driver/${driverId}`)
+                setWalletData(res.data?.data);
+            }
+            catch (error) {
+                console.error('Error fetching active booking:', error);
+            }
+        };
+
+        getWalletHistory()
+    }, []);
+
+
+    const sumTotal = (data) => { return data?.reduce((acc, cur) => acc + cur.amount, 0).toFixed(2);};
 
     return (
 
@@ -41,24 +63,24 @@ const performance = () => {
                     <View style={{ justifyContent: "space-between", alignItems: "center", flexDirection: "row", marginVertical: 15, borderBottomWidth: 1, borderBottomColor: "#F2F7FF", paddingBottom: 10 }}>
                         <AntDesign name="left" size={20} color="black" />
                         <View style={{ justifyContent: "center", alignItems: "center" }}>
-                            <Text style={{ fontSize: 17, fontWeight: "500" }}>USD 170,000.00</Text>
-                            <Text style={{ color: "#aeabab" }}>(Last 7 days)</Text>
+                            <Text style={{ fontSize: 17, fontWeight: "500" }}>USD {sumTotal(walletData)}</Text>
+                            <Text style={{ color: "#aeabab" }}>(All Time)</Text>
                         </View>
                         <AntDesign name="right" size={20} color="black" />
 
                     </View>
 
                     <Svg height={chartHeight + 40} >
-                        {data.map((item, index) => {
+                        {walletData.map((item, index) => {
                             const x = index * (barWidth + 5) + 20;
-                            const filledHeight = (item.value / item.maxValue) * chartHeight;
+                            const filledHeight = (item?.amount / 200) * chartHeight;
                             const emptyHeight = chartHeight - filledHeight;
                             return (
                                 <React.Fragment key={index}>
                                     <Rect x={x} y={0} width={barWidth} height={chartHeight} fill="#DAEBF3" rx={5} />
                                     <Rect x={x} y={emptyHeight} width={barWidth} height={filledHeight} fill="#00AAFF" rx={5} />
                                     <SvgText x={x + barWidth / 2} y={emptyHeight - 10} fontSize="12" fill="black" textAnchor="middle"></SvgText>
-                                    <SvgText x={x + barWidth / 2} y={chartHeight + 20} fontSize="12" fill="black" textAnchor="middle">{item.label}</SvgText>
+                                    <SvgText x={x + barWidth / 2} y={chartHeight + 20} fontSize="12" fill="black" textAnchor="middle">{item?.amount?.toFixed(2)}</SvgText>
                                 </React.Fragment>
                             );
                         })}
@@ -73,22 +95,17 @@ const performance = () => {
 
                     <View style={{ justifyContent: "space-between", alignItems: "center", flexDirection: "row", marginVertical: 2,paddingHorizontal:10 }}>
                         <Text style={{ color: "#aeabab" }}>Total Trips</Text>
-                        <Text style={{ fontSize: 15, fontWeight: "500", color: "#aeabab" }}>116</Text>
-                    </View>
-
-                    <View style={{ justifyContent: "space-between", alignItems: "center", flexDirection: "row", marginVertical: 2,paddingHorizontal:10 }}>
-                        <Text style={{ color: "#aeabab" }}>Time Online</Text>
-                        <Text style={{ fontSize: 15, fontWeight: "500", color: "#aeabab" }}>$210</Text>
+                        <Text style={{ fontSize: 15, fontWeight: "500", color: "#aeabab" }}>{walletData?.length}</Text>
                     </View>
 
                     <View style={{ justifyContent: "space-between", alignItems: "center", flexDirection: "row", marginVertical: 2,paddingHorizontal:10 }}>
                         <Text style={{ color: "#aeabab" }}>Total earnings</Text>
-                        <Text style={{ fontSize: 15, fontWeight: "500", color: "#aeabab" }}>$210</Text>
+                        <Text style={{ fontSize: 15, fontWeight: "500", color: "#aeabab" }}>${sumTotal(walletData)}</Text>
                     </View>
 
                     <View style={{ justifyContent: "space-between", alignItems: "center", flexDirection: "row", marginVertical: 2,paddingHorizontal:10 }}>
                         <Text style={{ color: "#aeabab" }}>Total tips</Text>
-                        <Text style={{ fontSize: 15, fontWeight: "500", color: "#aeabab" }}>$210</Text>
+                        <Text style={{ fontSize: 15, fontWeight: "500", color: "#aeabab" }}>$0</Text>
                     </View>
 
                 </View>
@@ -110,4 +127,4 @@ const performance = () => {
     )
 }
 
-export default performance
+export default Performance

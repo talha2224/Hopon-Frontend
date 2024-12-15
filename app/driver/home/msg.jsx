@@ -9,6 +9,7 @@ import { useTheme } from '../../../hooks/themeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import devConfig from '../../../config';
 import axios from 'axios';
+import BottomNav2 from '../../../components/BottomNav2';
 
 const Msg = () => {
     const [data, setData] = useState([])
@@ -18,8 +19,8 @@ const Msg = () => {
 
     const fetchChats = async () => {
         try {
-            let riderId = await AsyncStorage.getItem('riderId');
-            const res = await axios.get(`${devConfig.baseUrl}/chat/rider/all/${riderId}`)
+            let riderId = await AsyncStorage.getItem('driverId');
+            const res = await axios.get(`${devConfig.baseUrl}/chat/driver/all/${riderId}`)
             setData(res?.data?.data)
 
         }
@@ -44,7 +45,7 @@ const Msg = () => {
     const showMessages = async(chatId,driverName)=>{
         await AsyncStorage.setItem("chatId",chatId)
         await AsyncStorage.setItem("driverName",driverName)
-        router.push("/rider/home/messages")
+        router.push("/driver/home/messages")
         // console.log(chat,'chat')
     }
 
@@ -53,11 +54,14 @@ const Msg = () => {
     }, [])
 
 
+    console.log(data,'data')
+
+
     return (
         <View style={isDarkTheme ? style.containerDark : style.container}>
 
             <View style={{ paddingHorizontal: 20, paddingVertical: 40, display: "flex", justifyContent: "space-between", alignItems: "center", flexDirection: "row" }}>
-                <AntDesign onPress={() => router.push("/rider/home/profile")} name="arrowleft" size={24} color={isDarkTheme ? "white" : "black"} />
+                <AntDesign onPress={() => router.push("/driver/home/account")} name="arrowleft" size={24} color={isDarkTheme ? "white" : "black"} />
                 <Text style={{ color: isDarkTheme && "white" }}>Messages</Text>
                 <View></View>
             </View>
@@ -69,17 +73,16 @@ const Msg = () => {
                         <View style={{ backgroundColor: isDarkTheme ? "#333333" : "#fff", paddingVertical: 10, paddingHorizontal: 1, borderRadius: 10, marginHorizontal: 10 }}>
                             {
                                 data?.map((i) => (
-                                    <Pressable onPress={()=>{showMessages(i?._id,i?.driverId?.first_name)}} key={i?._id} style={{ marginBottom: 15, marginHorizontal: 10, display: "flex", justifyContent: "space-between", alignItems: "center", flexDirection: "row" }}>
+                                    <Pressable onPress={()=>{showMessages(i?._id,i?.riderId?.first_name)}} key={i?._id} style={{ marginBottom: 15, marginHorizontal: 10, display: "flex", justifyContent: "space-between", alignItems: "center", flexDirection: "row" }}>
                                         <Pressable style={{ display: "flex", alignItems: "center", flexDirection: "row" }}>
                                             <Image source={userImage} />
-                                            <Pressable onPress={() => showMessages(i?._id,i?.driverId?.first_name)} style={{ marginLeft: 8 }}>
-                                                <Text style={{ color: isDarkTheme ? "white" : "#323232", marginBottom: 2 }}>{i?.driverId?.first_name}</Text>
+                                            <Pressable onPress={() => showMessages(i?._id,i?.riderId?.first_name)} style={{ marginLeft: 8 }}>
+                                                <Text style={{ color: isDarkTheme ? "white" : "#323232", marginBottom: 2 }}>{i?.riderId?.first_name}</Text>
                                                 <Text style={{ color: isDarkTheme ? "white" : "#000000" }}>{i?.latestMessage ? truncateMessage(i?.latestMessage?.message) : "No chat"}</Text>
                                             </Pressable>
                                         </Pressable>
                                         <Pressable style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
                                             <Text style={{ color: "#8D8C8C", marginBottom: 4 }}>{getDayOfWeek(i?.createdAt ? i?.createdAt : i?.riderId?.createdAt)}</Text>
-                                            {/* <View style={{ color: "#ffff", backgroundColor: "#2666CF", borderRadius: 100, width: 20, height: 20, display: "flex", justifyContent: "center", alignItems: "center" }}><Text style={{ color: "#ffff" }}>3</Text></View> */}
                                         </Pressable>
                                     </Pressable>
                                 ))
@@ -94,7 +97,7 @@ const Msg = () => {
             }
 
 
-            <BottomNav />
+            <BottomNav2 />
 
         </View>
     )

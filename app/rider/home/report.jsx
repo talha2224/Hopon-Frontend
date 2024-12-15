@@ -1,14 +1,12 @@
 import React from 'react'
-import { Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import {Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import style from '../../../style/rider/home/report';
 import BottomNav from '../../../components/BottomNav';
 import { AntDesign, EvilIcons } from '@expo/vector-icons';
-import office2Image from '../../../assets/images/checkoff.png';
 import { useRouter } from 'expo-router';
 
 
-const report = () => {
-    const arr = [1, 2, 3, 4]
+const Report = () => {
     const router = useRouter()
     return (
         <View style={style.container}>
@@ -22,13 +20,13 @@ const report = () => {
             <ScrollView contentContainerStyle={style.Scrollcontainer}>
 
                 <View style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                    <TextInput placeholder='Write your complaint...' style={{ borderWidth: 1, borderColor: "#E6E6E6", borderRadius: 5, width: "80%", height: 50, padding: 10 }} />
-                    <View style={{ backgroundColor: "#E1E1E1", borderRadius: 5, display: "flex", justifyContent: "center", alignItems: "center", marginTop: 15, width: "40%", height: 50 }}>
+                    <TextInput placeholder='Write your complaint...' style={{ borderWidth: 1, borderColor: "#E6E6E6", borderRadius: 5, width: "90%", height: 150, padding: 10 }} />
+                    {/* <View style={{ backgroundColor: "#E1E1E1", borderRadius: 5, display: "flex", justifyContent: "center", alignItems: "center", marginTop: 15, width: "40%", height: 50 }}>
                         <AntDesign name="picture" size={24} color="black" />
-                    </View>
-                    <View style={{ backgroundColor: "#2666CF", width: "80%", height: 50, display: "flex", justifyContent: "center", alignItems: "center", marginTop: 15, borderRadius: 5 }}>
-                        <Text style={{ color: "#fff" }}>Start Now</Text>
-                    </View>
+                    </View> */}
+                    <Pressable onPress={() => router.push("/rider/home/profile")} style={{ backgroundColor: "#2666CF", width: "90%", height: 50, display: "flex", justifyContent: "center", alignItems: "center", marginTop: 15, borderRadius: 5 }}>
+                        <Text style={{ color: "#fff" }}>Submit</Text>
+                    </Pressable>
                 </View>
 
             </ScrollView>
@@ -40,4 +38,4 @@ const report = () => {
     )
 }
 
-export default report
+export default Report

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import style from '../../../style/rider/home/profile';
 import { Image, Pressable, StatusBar, Text, View } from 'react-native'
 import BottomNav from '../../../components/BottomNav2'
@@ -15,9 +15,31 @@ import { AntDesign, Entypo } from '@expo/vector-icons';
 import { useTheme } from '../../../hooks/themeContext';
 import onImage from '../../../assets/images/on.png';
 import offImage from '../../../assets/images/off.png';
-const account = () => {
+import msgImage from '../../../assets/images/msg.png';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import config from '../../../config';
+const Account = () => {
     const router = useRouter()
     const { isDarkTheme, toggleTheme } = useTheme();
+    const [data, setData] = useState(null);
+
+    // Fetch profile data from API
+    const fetchProfile = async () => {
+        const riderId = await AsyncStorage.getItem('driverId');
+        if (riderId) {
+            try {
+                const res = await axios.get(`${config.baseUrl}/driver/info/${riderId}`);
+                setData(res.data.data);
+            } catch (error) {
+                console.log('Error fetching profile:', error);
+            }
+        }
+    };
+
+    useEffect(() => {
+        fetchProfile();
+    }, []);
 
     return (
         <View style={isDarkTheme ? style.containerDark2 : style.container}>
@@ -28,17 +50,20 @@ const account = () => {
                 <Text style={{ color: "#fff", textAlign: "center", fontSize: 16, marginBottom: 10 }}>Account</Text>
                 <View style={{ justifyContent: "space-between", alignItems: "center", marginTop: 5, flexDirection: "row" }}>
                     <View style={{ alignItems: "center", flexDirection: "row" }}>
-                        <Image source={userImage} />
+                        <Image source={data?.profile ? { uri: data.profile } : userImage} style={{ width: 40, height: 40, borderRadius: 50 }} />
                         <View style={{ marginLeft: 15 }}>
-                            <Text style={{ color: "white", fontSize: 16, fontWeight: "500" }}>Frank Edwards</Text>
-                            <View style={{ alignItems: "center", flexDirection: "row", marginTop: 2 }}>
+                            <Text style={{ color: "white", fontSize: 16, fontWeight: "500" }}>{data?.first_name + " " + data?.last_name}</Text>
+                            {/* <View style={{ alignItems: "center", flexDirection: "row", marginTop: 2 }}>
                                 <Text style={{ color: "white", fontSize: 12, marginRight: 3 }}>4.8</Text>
                                 <Entypo name="star" size={12} color="#51D476" />
                                 <Text style={{ color: "white", fontSize: 12, marginLeft: 3 }}>(1209)</Text>
-                            </View>
+                            </View> */}
                         </View>
                     </View>
-                    <AntDesign name="right" size={15} color="white" />
+
+                    <Pressable onPress={() => router.push("/driver/home/profile2")}>
+                        <AntDesign name="right" size={15} color="white" />
+                    </Pressable>
 
                 </View>
                 <View style={{ top: 130, left: 10, right: 10, zIndex: 2, elevation: 2, backgroundColor: isDarkTheme ? "#0B1333" : "#f9f9f9", position: "absolute", borderRadius: 5 }}>
@@ -46,11 +71,11 @@ const account = () => {
                     <View style={{ backgroundColor: isDarkTheme ? "#0B1333" : "#fff", padding: 10, borderRadius: 10, }}>
 
 
-                        <Pressable onPress={() => router.push("/driver/home/setting")} style={{ display: "flex", alignItems: "center", flexDirection: "row", marginVertical: 10, paddingBottom: 10, borderBottomColor: "#F2F2F2", borderBottomWidth: isDarkTheme ? 0 : 1 }}>
+                        <Pressable onPress={() => router.push("/driver/home/profile2")} style={{ display: "flex", alignItems: "center", flexDirection: "row", marginVertical: 10, paddingBottom: 10, borderBottomColor: "#F2F2F2", borderBottomWidth: isDarkTheme ? 0 : 1 }}>
                             <View style={{ backgroundColor: "#F2F2F2", display: "flex", justifyContent: "center", alignItems: "center", borderRadius: 200, width: 32, height: 32, marginRight: 5 }}>
                                 <Image source={automaticImage} />
                             </View>
-                            <Text style={{ color: isDarkTheme ? "white" : "#454F60" }}>Settings</Text>
+                            <Text style={{ color: isDarkTheme ? "white" : "#454F60" }}>Profile</Text>
                         </Pressable>
 
                         <Pressable onPress={() => router.push("/driver/home/preference")} style={{ display: "flex", alignItems: "center", flexDirection: "row", marginBottom: 10, paddingBottom: 10, borderBottomColor: "#F2F2F2", borderBottomWidth: isDarkTheme ? 0 : 1 }}>
@@ -58,6 +83,14 @@ const account = () => {
                                 <Image source={pushImage} />
                             </View>
                             <Text style={{ color: isDarkTheme ? "white" : "#454F60" }}>Driver preferences</Text>
+                        </Pressable>
+
+
+                        <Pressable onPress={() => router.push("/driver/home/msg")} style={{ display: "flex", alignItems: "center", flexDirection: "row", marginBottom: 10, paddingBottom: 10, borderBottomColor: "#F2F2F2", borderBottomWidth: isDarkTheme ? 0 : 1 }}>
+                            <View style={{ backgroundColor: "#F2F2F2", display: "flex", justifyContent: "center", alignItems: "center", borderRadius: 200, width: 32, height: 32, marginRight: 5 }}>
+                                <Image source={msgImage} />
+                            </View>
+                            <Text style={{ color: isDarkTheme ? "white" : "#454F60" }}>Messages</Text>
                         </Pressable>
 
                         <Pressable onPress={() => router.push("/driver/home/saved")} style={{ display: "flex", alignItems: "center", flexDirection: "row", marginBottom: 10, paddingBottom: 10, borderBottomColor: "#F2F2F2", borderBottomWidth: isDarkTheme ? 0 : 1 }}>
@@ -117,7 +150,7 @@ const account = () => {
                             }
                         </Pressable>
 
-                        <Pressable style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                        <Pressable onPress={() => router.push("/driver")} style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
                             <View style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop: 15, backgroundColor: "#FEE9E5", width: 143, height: 48, borderRadius: 10 }}>
                                 <Text style={{ color: "#FD3030" }}>Logout</Text>
                             </View>
@@ -138,4 +171,4 @@ const account = () => {
     )
 }
 
-export default account
+export default Account

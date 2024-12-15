@@ -9,7 +9,7 @@ const RootLayout = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push('/driver')
+      router.push('/rider')
     }, 2000)
     return () => clearTimeout(timer);
   }, []);

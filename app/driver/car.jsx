@@ -6,13 +6,12 @@ import nameStyle from '../../style/rider/phone';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import config from '../../config'
 import { router } from 'expo-router';
-import axios from 'axios'
 import { FontAwesome5 } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 
-const car = () => {
+const Car = () => {
     const [files, setFiles] = useState([null, null, null]); // Initialize with three slots
     const [loading, setLoading] = useState(false);
 
@@ -53,15 +52,15 @@ const car = () => {
 
     // Continue button handler
     const continueHandler = async () => {
-        
-        if (files.length==3) {
+
+        if (files.length == 3) {
             // setLoading(true);
             Toast.show({
                 type: 'success',
                 text1: 'Uploading...',
                 text2: 'Please wait while we process your information.',
-                autoHide:loading
-              });
+                autoHide: loading
+            });
             try {
                 // Retrieve and parse data from AsyncStorage
                 const insurance = JSON.parse(await AsyncStorage.getItem("insurance"));
@@ -70,10 +69,10 @@ const car = () => {
                 const first_name = JSON.parse(await AsyncStorage.getItem("first_name"));
                 const last_name = JSON.parse(await AsyncStorage.getItem("last_name"));
                 const phone_number = JSON.parse(await AsyncStorage.getItem("phone_number"));
-    
+
                 // Create FormData
                 let formData = new FormData();
-    
+
                 // Append license images
                 // license.forEach((img, index) => {
                 //     formData.append("licenseImage", {
@@ -82,10 +81,10 @@ const car = () => {
                 //         type: "image/jpeg"
                 //     });
                 // });
-    
+
                 // Append car photos
-                files.forEach((img, index) => {formData.append("carPhotos", {uri: img.uri,name: `carPhoto_${index}.jpg`,type: "image/jpeg"});});
-    
+                files.forEach((img, index) => { formData.append("carPhotos", { uri: img.uri, name: `carPhoto_${index}.jpg`, type: "image/jpeg" }); });
+
                 // Append insurance images
                 // insurance.forEach((img, index) => {
                 //     formData.append("insuranceImage", {
@@ -94,7 +93,7 @@ const car = () => {
                 //         type: "image/jpeg"
                 //     });
                 // });
-    
+
                 // Append inspection images
                 // inspection.forEach((img, index) => {
                 //     formData.append("inspection", {
@@ -103,7 +102,7 @@ const car = () => {
                 //         type: "image/jpeg"
                 //     });
                 // });
-    
+
                 // Append text data
                 formData.append("first_name", first_name);
                 formData.append("last_name", last_name);
@@ -111,14 +110,14 @@ const car = () => {
 
 
 
-    
+
                 // Send FormData to server
-                const response = await fetch("https://29a0-116-90-103-172.ngrok-free.app/api/v1/driver/register", {
+                const response = await fetch(`${config.baseUrl}/driver/register`, {
                     method: "POST",
                     body: formData,
-                    headers: {"Content-Type": "multipart/form-data",},
+                    headers: { "Content-Type": "multipart/form-data", },
                 });
-    
+
                 if (response) {
                     setLoading(true)
                     await AsyncStorage.removeItem("insurance");
@@ -128,15 +127,15 @@ const car = () => {
                     await AsyncStorage.removeItem("last_name")
                     await AsyncStorage.removeItem("phone_number")
                     await AsyncStorage.removeItem("car")
-                    setFiles([null,null,null])
-                    Toast.show({type: 'info',text1: 'Success',text2: 'Your account is created.',autoHide: false,});
+                    setFiles([null, null, null])
+                    Toast.show({ type: 'info', text1: 'Success', text2: 'Your account is created.', autoHide: false, });
                     router.push("/driver");
 
-                } 
+                }
                 else {
                     console.error("Failed to create account", response.status);
                 }
-            } 
+            }
             catch (error) {
                 console.error("Error uploading data:", error);
             }
@@ -187,8 +186,8 @@ const car = () => {
             <Pressable onPress={continueHandler} style={[nameStyle.btn, { width: "100%" }]}>
                 <Text style={nameStyle.btnTxt}>Continue</Text>
             </Pressable>
-<Toast />
+            <Toast />
         </View>
     );
 };
-export default car;
+export default Car;

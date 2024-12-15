@@ -54,8 +54,8 @@ const Trip = () => {
 
                 <View style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexDirection: "row", marginTop: 30, paddingHorizontal: 15 }}>
 
-                    <Pressable onPress={() => router.push("/rider/home")} style={isDarkTheme ? style.iconContainerDark : style.iconContainer}>
-                        <AntDesign onPress={() => router.push("/rider/home")} name="arrowleft" size={24} color={isDarkTheme ? "white" : "black"} />
+                    <Pressable onPress={() => router.push("/driver/home")} style={isDarkTheme ? style.iconContainerDark : style.iconContainer}>
+                        <AntDesign onPress={() => router.push("/driver/home")} name="arrowleft" size={24} color={isDarkTheme ? "white" : "black"} />
                     </Pressable>
 
                     <Text style={{ color: isDarkTheme ? "#fff" : "#828080" }}>Trip</Text>
@@ -84,8 +84,8 @@ const Trip = () => {
                     {
                         currentState == "upcoming" && (
 
-                            (data?.ongoing && data?.ongoing?.length > 0) && data?.ongoing?.map((i) => (
-                                <View key={i._id} style={{ paddingVertical: 10 }}>
+                            (data?.ongoing && data?.ongoing?.length > 0) && data?.ongoing?.map((i,index) => (
+                                <View key={index} style={{ paddingVertical: 10 }}>
 
                                     {i?.createdAt && <Text style={{ color: "#828080", marginVertical: 10 }}>{formatDate(i?.createdAt)}</Text>}
 

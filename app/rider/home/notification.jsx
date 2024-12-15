@@ -34,63 +34,80 @@ const Notification = () => {
         return date.toLocaleDateString("en-US", options);
     };
 
+    
+    const truncateText = (message) => {
+        if (message.length > 15) {
+            return message.substring(0, 30) + "...";
+        }
+        return message;
+    }
+
+
     return (
         <View style={isDarkTheme ? style.containerDark : style.container}>
 
-            <ScrollView contentContainerStyle={style.Scrollcontainer}>
 
-                {/* TOP BAR  */}
+            {
+                data?.length > 0 ?
+                    <ScrollView contentContainerStyle={style.Scrollcontainer}>
 
-                <View style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexDirection: "row", marginTop: 30, paddingHorizontal: 15 }}>
+                        {/* TOP BAR  */}
 
-                    <Pressable onPress={() => router.push("/rider/home")} style={isDarkTheme ? style.iconContainerDark : style.iconContainer}>
-                        <AntDesign onPress={() => router.push("/rider/home")} name="arrowleft" size={24} color={isDarkTheme ? "white" : "black"} />
-                    </Pressable>
+                        <View style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexDirection: "row", marginTop: 30, paddingHorizontal: 15 }}>
 
-                    <Text style={{ color: isDarkTheme ? "white" : "#828080" }}>Notification</Text>
+                            <Pressable onPress={() => router.push("/rider/home")} style={isDarkTheme ? style.iconContainerDark : style.iconContainer}>
+                                <AntDesign onPress={() => router.push("/rider/home")} name="arrowleft" size={24} color={isDarkTheme ? "white" : "black"} />
+                            </Pressable>
 
-                    <EvilIcons name="search" size={24} color="black" />
+                            <Text style={{ color: isDarkTheme ? "white" : "#828080" }}>Notification</Text>
 
-                </View>
+                            <EvilIcons name="search" size={24} color="black" />
 
-                {/* MAIN CONTENT  */}
+                        </View>
 
-                <ScrollView contentContainerStyle={{ marginTop: 20, marginHorizontal: 15, backgroundColor: !isDarkTheme && "#F9F9F9", padding: 10,paddingBottom:80 }}>
+                        {/* MAIN CONTENT  */}
+
+                        <ScrollView contentContainerStyle={{ marginTop: 20, marginHorizontal: 15, backgroundColor: !isDarkTheme && "#F9F9F9", padding: 10, paddingBottom: 80 }}>
 
 
 
-                    {
-                        data?.map((i) => (
+                            {
+                                data?.map((i) => (
 
-                            <View key={i?._id}>
-                                <Text style={{ color: "#828080", marginVertical: 10 }}>{formatDate(i?.createdAt)}</Text>
-                                <View style={{ backgroundColor: isDarkTheme ? "#292929" : "#ffff", borderRadius: 15, padding: 10, marginTop: 10, display: "flex", alignItems: "center", flexDirection: "row" }}>
-                                    {
-                                        i?.cancelled ?
-                                            <View style={{ backgroundColor: "#FD4747", display: "flex", justifyContent: "center", alignItems: "center", width: 30, height: 30, borderRadius: 100, marginRight: 10 }}>
-                                                <Entypo name="cross" size={24} color="white" />
-                                            </View> :
-                                            <View style={{ backgroundColor: "#EFF3FA", display: "flex", justifyContent: "center", alignItems: "center", width: 30, height: 30, borderRadius: 100, marginRight: 10 }}>
-                                                <FontAwesome name="picture-o" size={18} color="#292D32" />
+                                    <View key={i?._id}>
+                                        <Text style={{ color: "#828080", marginVertical: 10 }}>{formatDate(i?.createdAt)}</Text>
+                                        <View style={{ backgroundColor: isDarkTheme ? "#292929" : "#ffff", borderRadius: 15, padding: 10, marginTop: 10, display: "flex", alignItems: "center", flexDirection: "row" }}>
+                                            {
+                                                i?.cancelled ?
+                                                    <View style={{ backgroundColor: "#FD4747", display: "flex", justifyContent: "center", alignItems: "center", width: 30, height: 30, borderRadius: 100, marginRight: 10 }}>
+                                                        <Entypo name="cross" size={24} color="white" />
+                                                    </View> :
+                                                    <View style={{ backgroundColor: "#EFF3FA", display: "flex", justifyContent: "center", alignItems: "center", width: 30, height: 30, borderRadius: 100, marginRight: 10 }}>
+                                                        <FontAwesome name="picture-o" size={18} color="#292D32" />
+                                                    </View>
+                                            }
+                                            <View>
+                                                <Text style={{ color: isDarkTheme && "white" }}>{i?.title}</Text>
+                                                <Text style={{ color: "#828080", marginTop: 3, flexWrap: "wrap", }} numberOfLines={2} ellipsizeMode="tail">{truncateText(i?.description)}</Text>
                                             </View>
-                                    }
-                                    <View>
-                                        <Text style={{ color: isDarkTheme && "white" }}>{i?.title}</Text>
-                                        <Text style={{ color: "#828080", marginTop: 3, flexWrap: "wrap", }} numberOfLines={2} ellipsizeMode="tail">{i?.description}</Text>
+                                        </View>
+
                                     </View>
-                                </View>
-
-                            </View>
-                        ))
-                    }
+                                ))
+                            }
 
 
 
-                </ScrollView>
+                        </ScrollView>
 
 
 
-            </ScrollView>
+                    </ScrollView>
+                    :
+                    <View style={{ flex: 1, justifyContent: "center", alignItems: "center", width: "100%", height: "100%" }}>
+                        <Text style={{ color: isDarkTheme ? "white" : "black", fontSize: 20 }}>No Data Found</Text>
+                    </View>
+            }
 
 
 

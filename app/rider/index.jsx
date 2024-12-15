@@ -1,6 +1,6 @@
 import indexstyle from '../../style/rider/index'
 import React, { useState } from 'react'
-import { Image, Text, TextInput, ToastAndroid, View } from 'react-native'
+import { Image, Pressable, Text, TextInput, ToastAndroid, View } from 'react-native'
 import mailImg from '../../assets/images/mail.png';
 import googleImg from '../../assets/images/google.png';
 import appleImg from '../../assets/images/apple.png';
@@ -9,23 +9,26 @@ import config from '../../config'
 import { router } from 'expo-router';
 import axios from 'axios'
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
 const RootLayout = () => {
 
   const [methods] = useState([{ name: "Continue with Email", img: mailImg }, { name: "Continue with Google", img: googleImg }, { name: "Continue with Apple", img: appleImg }])
   const [number,setNumber] = useState(null)
-  
+  const [autoHide, setAutoHide] = useState(false)
+
   const getAccount = async () => {
     if (!number) {
       ToastAndroid.show('Please enter your mobile number', ToastAndroid.SHORT);
     } 
     else {
       try {
-        console.log((`${config.baseUrl}/rider/phone/${number}`))
+        Toast.show({type: 'success',text1: 'Finding Account...',text2: 'Please wait while we process your information.',autoHide:autoHide});
         const res = await axios.get(`${config.baseUrl}/rider/phone/${number}`);
         if (res.status === 201) {
           const riderId = res.data.data._id;
           await AsyncStorage.setItem('riderId', riderId);
           ToastAndroid.show('Account found and ID saved!', ToastAndroid.SHORT);
+          setAutoHide(true)
           router.push('/rider/home');
         }
       } 
@@ -53,10 +56,10 @@ const RootLayout = () => {
 
       {
         methods.map((i, ind) => (
-          <View key={i.name} style={[indexstyle.methods, { width: "100%" }]}>
+          <Pressable onPress={()=>router.push("/rider/name")} key={i.name} style={[indexstyle.methods, { width: "100%" }]}>
             <Image style={indexstyle.img} source={i.img} alt='img' />
             <Text style={indexstyle.methodsTxt}>{i.name}</Text>
-          </View>
+          </Pressable>
         ))
       }
 
@@ -73,7 +76,8 @@ const RootLayout = () => {
       <View style={[indexstyle.btn, { width: "100%" }]}>
         <Text onPress={getAccount} style={indexstyle.btnTxt}>Continue</Text>
       </View>
-      {/* onPress={() => router.push("/rider/name")} */}
+
+      <Toast/>
 
     </View>
   )

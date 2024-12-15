@@ -15,8 +15,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import devConfig from '../../../config';
 import axios from 'axios';
 import haversine from 'haversine';
-import Toast from 'react-native-toast-message';
 import { io } from 'socket.io-client';
+import Toast from 'react-native-toast-message';
 
 
 const darkMapStyle = [
@@ -109,8 +109,7 @@ const Index = () => {
     const router = useRouter()
     const [mapRegion, setMapRegion] = useState({ latitude: 37.78825, longitude: -122.4325, latitudeDelta: 0.0922, longitudeDelta: 0.0421 });
     const [drivers, setDrivers] = useState([]);
-    const [errorMsg, setErrorMsg] = useState(null);
-    const [showLocation, setShowLocation] = useState(true)
+    const [showLocation] = useState(true)
     const [count, setCount] = useState(0)
     const data = [1, 2, 3, 4, 5]
     const [singleCar, setSingleCar] = useState(false)
@@ -122,12 +121,17 @@ const Index = () => {
     const [selectedCar, setSelectedCar] = useState(null)
     const [rideDetails, setrideDetails] = useState(null)
     const [loading, setLoading] = useState(null);
+    const [dropoffAddress, setDropoffAddress] = useState('');
+    const [pick, setpick] = useState('');
+    const [price, setprice] = useState(0);
+    const [autoHide, setAutoHide] = useState(false)
+    const [hasRedirected, setHasRedirected] = useState(false);
 
 
     const userLocation = async () => {
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-            setErrorMsg('Permission to access location was denied');
+            console.log('Permission to access location was denied');
             return;
         }
         let location = await Location.getCurrentPositionAsync({});
@@ -148,12 +152,12 @@ const Index = () => {
             let pickupLatitude = await AsyncStorage.getItem('pickupLatitude');
             const res = await axios.post(`${devConfig.baseUrl}/driver/near-by`, { pickupLongitude: Number(pickupLongitude), pickupLatitude: Number(pickupLatitude) });
             const driversList = res.data.map((driver) => ({
-                id: driver._id,
-                latitude: driver.location.coordinates[1],
-                longitude: driver.location.coordinates[0],
-                name: `${driver.first_name} ${driver.last_name}`,
-                phone: driver.phone_number,
-                carPhotos: driver.carPhotos,
+                id: driver?._id,
+                latitude: driver?.location?.coordinates[1] ? driver?.location?.coordinates[1] : 0,
+                longitude: driver?.location?.coordinates[0] ? driver?.location?.coordinates[0] : 0,
+                name: `${driver?.first_name} ${driver.last_name}`,
+                phone: driver?.phone_number,
+                carPhotos: driver?.carPhotos,
             }));
             setDrivers(driversList);
         }
@@ -163,26 +167,6 @@ const Index = () => {
     }
 
 
-
-    useEffect(() => {
-        userLocation();
-    }, []);
-
-    const [dropoffAddress, setDropoffAddress] = useState('');
-    const [pick, setpick] = useState('');
-    useEffect(() => {
-        const getStoredCoordinates = async () => {
-            const dropAddress = await AsyncStorage.getItem('dropoffAddress');
-            const pickUpAddress = await AsyncStorage.getItem('pickupAddress');
-            setpick(pickUpAddress)
-            setDropoffAddress(dropAddress)
-        };
-
-        getStoredCoordinates();
-    }, []);
-
-
-    const [price, setprice] = useState(0)
 
     const calculatePrice = async () => {
         try {
@@ -206,8 +190,9 @@ const Index = () => {
     const confirmRide = async () => {
 
         try {
-            // setDetailView(true)
+            setAutoHide(false)
             setLoading(false)
+            Toast.show({type: 'success',text1: 'Creating Ride...',text2: 'Please wait while we process your information.',autoHide:true});
             const dropoffLongitude = await AsyncStorage.getItem('dropoffLongitude');
             const dropoffLatitude = await AsyncStorage.getItem('dropoffLatitude');
             const pickUpAddress = await AsyncStorage.getItem('pickupAddress');
@@ -221,6 +206,7 @@ const Index = () => {
                 dropoffAddress: dropoffAddress,
                 pickUpAddress: pickUpAddress
             });
+            setAutoHide(true)
         }
         catch (error) {
             console.log(error)
@@ -229,59 +215,77 @@ const Index = () => {
     const cancelRide = async () => {
 
         try {
+            setAutoHide(false)
+            Toast.show({type: 'success',text1: 'Cancelling Ride...',text2: 'Please wait while we process your information.',autoHide:autoHide});
             let riderId = await AsyncStorage.getItem('riderId');
             const res = await axios.get(`${devConfig.baseUrl}/ride/cancel/rider/${riderId}`);
+            setAutoHide(true)
             router.push("/rider/home/canceled")
         }
         catch (error) {
             console.log(error)
         }
     }
+    
+    const calculateDistanceInKm = (driverLongitude = 0, driverLatitude = 0, pickupLongitude = mapRegion?.longitude, pickupLatitude = mapRegion?.latitude) => {
+        const toRadians = (degrees) => degrees * (Math.PI / 180);
+        const earthRadiusKm = 6371;
+        const deltaLat = toRadians(pickupLatitude - driverLatitude);
+        const deltaLon = toRadians(pickupLongitude - driverLongitude);
+        const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) + Math.cos(toRadians(driverLatitude)) * Math.cos(toRadians(pickupLatitude)) * Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return parseFloat(c.toFixed(2));
 
+    };
 
-    const completeRide = async () => {
-        const res = await axios.post(`${devConfig.baseUrl}/ride/end/${rideDetails._id}`,)
-        router.push("/rider/home/feedback")
+    const estimateTimeToReach = (driverLongitude = 0, driverLatitude = 0, pickupLongitude = 0, pickupLatitude = 0, averageSpeedKmPerHour = 100) => {
+        const distance = calculateDistanceInKm(driverLongitude, driverLatitude, pickupLongitude, pickupLatitude);
+        const timeInHours = distance / averageSpeedKmPerHour;
+        const timeInMinutes = timeInHours * 60;
+        return parseFloat(timeInMinutes.toFixed(2));
+    };
+
+    
+    const getActiveBooking = async () => {
+        try {
+            await AsyncStorage.setItem("booked","true")
+            let riderId = await AsyncStorage.getItem('riderId');
+            const bookingInfo = await axios.get(`${devConfig.baseUrl}/ride/info/rider/${riderId}`);
+            
+            if (bookingInfo?.data?.data?.driver?.location?.coordinates[0]) {
+                setrideDetails(bookingInfo?.data?.data);
+                
+                setSelectedCar({
+                    latitude: bookingInfo?.data?.data?.driver?.location?.coordinates[1] || 0,
+                    longitude: bookingInfo?.data?.data?.driver?.location?.coordinates[0] || 0,
+                });
+                setLoading(true);
+                setCount(10);
+            }
+        } 
+        catch (error) {
+            console.error('Error fetching active booking:', error);
+        }
+    };
+
+    const RideExits = async()=>{
+        let res = await AsyncStorage.getItem("booked")
+        res=="true" && router.push("/rider/home/accepted")
     }
 
+    useEffect(()=>{
+        RideExits()
+    },[])
 
     useEffect(() => {
-        const getActiveBooking = async () => {
-            try {
-                let riderId = await AsyncStorage.getItem('riderId');
-                const bookingInfo = await axios.get(`${devConfig.baseUrl}/ride/info/rider/${riderId}`);
-                console.log()
-                if (bookingInfo?.data?.data?.driver?.location?.coordinates[0]) {
-                    setrideDetails(bookingInfo.data.data);
-                    setSelectedCar({
-                        latitude: bookingInfo.data.data.driver.location.coordinates[1],
-                        longitude: bookingInfo.data.data.driver.location.coordinates[0],
-                    });
-                    setLoading(true);
-                    setCount(10);
-                }
-            } catch (error) {
-                console.error('Error fetching active booking:', error);
-            }
-        };
         const intervalId = setInterval(getActiveBooking, 10000);
-
-        return () => {
-            clearInterval(intervalId);
-        };
+        return () => {clearInterval(intervalId);};
     }, []);
-
-
-
 
     useEffect(() => {
         const joinDriverRoom = async () => {
             const driverId = await AsyncStorage.getItem('riderId');
-            console.log(driverId, 'driverId')
-            if (driverId) {
-                socket.emit('joinRoom', driverId);
-                // console.log(`Joined room for driver: ${driverId}`);
-            }
+            if (driverId) { socket.emit('joinRoom', driverId) }
         };
 
         joinDriverRoom();
@@ -289,13 +293,29 @@ const Index = () => {
         socket.on('connect', () => { console.log('Socket connected:', socket.id); });
 
         socket.on('cancelRide', (ride) => {
-            router.push("/rider/home")
+            router.push("/rider/home/canceled")
         });
 
         return () => {
-            socket.off('newRide');
+            socket.off('connect');
+            socket.off('cancelRide');
             socket.disconnect();
         };
+    }, []);
+
+    useEffect(() => {
+        userLocation();
+    }, []);
+
+    useEffect(() => {
+        const getStoredCoordinates = async () => {
+            const dropAddress = await AsyncStorage.getItem('dropoffAddress');
+            const pickUpAddress = await AsyncStorage.getItem('pickupAddress');
+            setpick(pickUpAddress)
+            setDropoffAddress(dropAddress)
+        };
+
+        getStoredCoordinates();
     }, []);
 
 
@@ -336,15 +356,6 @@ const Index = () => {
                             <Text style={{ marginTop: 10, color: isDarkTheme ? "#fff" : "#A0A1A3" }}>Drop Off</Text>
                             <TextInput editable={false} selection={{ start: 0, end: 0 }} value={dropoffAddress} placeholder='' style={{ marginTop: 5, borderBottomWidth: 1, borderBottomColor: "#A0A1A3", color: "#fff" }} />
 
-                            {/* {
-                                data.map((i) => (
-                                    <View key={i} style={{ display: "flex", alignItems: "center", flexDirection: "row", marginTop: 10 }}>
-                                        <Image source={OldImage} />
-                                        <Text style={{ color: isDarkTheme ? "#fff" : "#A0A1A3", marginLeft: 8 }}>Cinema</Text>
-                                    </View>
-                                ))
-                            } */}
-
                             <View style={{ backgroundColor: "#2666cf", width: "100%", height: 40, justifyContent: "center", alignItems: "center", marginTop: 10, borderRadius: 8, position: "absolute", bottom: 40, left: 20 }}>
                                 <Text onPress={() => setCount(1)} style={{ color: "#fff" }}>Confirm location</Text>
                             </View>
@@ -375,58 +386,68 @@ const Index = () => {
                                     </View>
                                 </Marker>
 
-                                {drivers.map(driver => (
-                                    <Marker key={driver.id} coordinate={{ latitude: driver.latitude, longitude: driver.longitude }}>
-                                        <View style={{ alignItems: 'center' }}>
-                                            <Image source={CarImage} style={{ width: 40, height: 40 }} />
-                                        </View>
-                                    </Marker>
-                                ))}
+                                {
+                                    drivers?.map(driver => (
+                                        <Marker key={driver.id} coordinate={{ latitude: driver?.latitude ? driver?.latitude : 0, longitude: driver?.longitude ? driver?.longitude : 0 }}>
+                                            <View style={{ alignItems: 'center' }}>
+                                                <Image source={CarImage} style={{ width: 40, height: 40 }} />
+                                            </View>
+                                        </Marker>
+                                    ))
+                                }
                             </MapView>
 
                             {/* CARS  */}
 
-                            <ScrollView showsHorizontalScrollIndicator={false} horizontal={true} contentContainerStyle={[style.cards, { backgroundColor: isDarkTheme && "#000" }]}>
+                            <ScrollView showsHorizontalScrollIndicator={false} horizontal={true} contentContainerStyle={[style.cards, { backgroundColor: isDarkTheme && "#000",flex:1 }]}>
 
                                 {
-                                    drivers.map((i) => (
-                                        <View key={i} style={{ backgroundColor: isDarkTheme ? "#292929" : "white", padding: 10, marginRight: 20, width: 250, borderRadius: 8, borderWidth: !isDarkTheme ? 0.3 : 0, borderColor: "#A0A1A3" }}>
 
-                                            <View style={{ flexDirection: "row" }}>
-                                                {/* backgroundColor: "#F1F1F1" */}
-                                                <View style={{ padding: 3, borderRadius: 10, marginRight: 20 }}>
-                                                    <Image source={{ uri: i.carPhotos[0] }} style={{ width: 60, height: 60 }} />
-                                                </View>
-                                                <View>
-                                                    <Text style={{ fontWeight: "bold", color: isDarkTheme && "#ffff" }}>Premium - Car</Text>
-                                                    <Text style={{ marginTop: 5, color: "#6a6a6a" }}>Price:  $5/km</Text>
-                                                    <View style={{ flexDirection: "row" }}>
-                                                        {
-                                                            data.map((i) => (
-                                                                <AntDesign key={i} name="star" size={15} color={i < 4 ? "#51D476" : "#E4E4E4"} style={{ marginTop: 5, marginRight: 3 }} />
-                                                            ))
-                                                        }
+                                    drivers?.length > 0 ?
+
+                                        drivers?.map((i) => (
+
+                                            <View key={i?._id} style={{ backgroundColor: isDarkTheme ? "#292929" : "white", padding: 10, marginRight: 20, width: 250, borderRadius: 8, borderWidth: !isDarkTheme ? 0.3 : 0, borderColor: "#A0A1A3" }}>
+
+                                                <View style={{ flexDirection: "row" }}>
+                                                    {/* backgroundColor: "#F1F1F1" */}
+                                                    <View style={{ padding: 3, borderRadius: 10, marginRight: 20 }}>
+                                                        <Image source={{ uri: i.carPhotos[0] }} style={{ width: 60, height: 60 }} />
+                                                    </View>
+                                                    <View>
+                                                        <Text style={{ fontWeight: "bold", color: isDarkTheme && "#ffff" }}>Premium - Car</Text>
+                                                        <Text style={{ marginTop: 5, color: "#6a6a6a" }}>Price:  $5/km</Text>
+                                                        <View style={{ flexDirection: "row" }}>
+                                                            {
+                                                                data.map((i) => (
+                                                                    <AntDesign key={i} name="star" size={15} color={i < 4 ? "#51D476" : "#E4E4E4"} style={{ marginTop: 5, marginRight: 3 }} />
+                                                                ))
+                                                            }
+                                                        </View>
+
                                                     </View>
 
                                                 </View>
 
+                                                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 5 }}>
+                                                    <View style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center" }}>
+                                                        <Text style={{ color: isDarkTheme && "#fff" }} onPress={() => { setSingleCar(true); setSelectedCar(i); calculatePrice() }}>2 {estimateTimeToReach(i?.longitude, i?.i?.latitude, mapRegion.longitude, mapRegion.latitude)}</Text>
+                                                    </View>
+                                                    <View style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center" }}>
+                                                        <Text style={{ color: isDarkTheme && "#fff" }} onPress={() => { setSingleCar(true); setSelectedCar(i); calculatePrice() }}>2 Gear</Text>
+                                                    </View>
+                                                    <View style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center" }}>
+                                                        <Text style={{ color: isDarkTheme && "#fff" }} onPress={() => { setSingleCar(true); setSelectedCar(i); calculatePrice() }}>{calculateDistanceInKm(i?.longitude, i?.i?.latitude, mapRegion.longitude, mapRegion.latitude)}KM</Text>
+                                                    </View>
+                                                </View>
+
+
                                             </View>
-
-                                            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 5 }}>
-                                                <View style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center" }}>
-                                                    <Text style={{ color: isDarkTheme && "#fff" }} onPress={() => { setSingleCar(true); setSelectedCar(i); calculatePrice() }}>2 min</Text>
-                                                </View>
-                                                <View style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center" }}>
-                                                    <Text style={{ color: isDarkTheme && "#fff" }} onPress={() => { setSingleCar(true); setSelectedCar(i); calculatePrice() }}>2 Gear</Text>
-                                                </View>
-                                                <View style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center" }}>
-                                                    <Text style={{ color: isDarkTheme && "#fff" }} onPress={() => { setSingleCar(true); setSelectedCar(i); calculatePrice() }}>2 KM</Text>
-                                                </View>
-                                            </View>
-
-
+                                        ))
+                                        :
+                                        <View style={{ justifyContent: "center", alignItems: "center", width: "100%"}}>
+                                            <Text style={{ color: "white",fontSize:14 }}>Sorry No Active Riders Found!</Text>
                                         </View>
-                                    ))
                                 }
 
 
@@ -466,7 +487,7 @@ const Index = () => {
                                     </View>
                                 </Marker>
 
-                                <Polyline coordinates={[{ latitude: mapRegion.latitude, longitude: mapRegion.longitude }, { latitude: selectedCar.latitude, longitude: selectedCar.longitude }]} strokeColor={isDarkTheme ? "white":"black"} strokeWidth={1} />
+                                <Polyline coordinates={[{ latitude: mapRegion.latitude, longitude: mapRegion.longitude }, { latitude: selectedCar.latitude, longitude: selectedCar.longitude }]} strokeColor={isDarkTheme ? "white" : "black"} strokeWidth={1} />
                             </MapView>
 
                             {/* CARS  */}
@@ -679,60 +700,9 @@ const Index = () => {
                 }
 
 
-
-                {
-                    count == 10 && (
-                        <View style={{ flex: 1 }}>
-
-                            <View style={style.topBar}>
-
-                                <AntDesign onPress={() => router.push("/rider/home")} name="arrowleft" size={24} color={isDarkTheme ? "white" : "black"} />
-
-                                <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: isDarkTheme ? "black" : "white", paddingVertical: 5, borderRadius: 20, paddingHorizontal: 10 }}>
-                                    <MaterialCommunityIcons name="target" size={24} color={isDarkTheme ? "white" : "black"} />
-                                    <Text style={{ marginLeft: 10, color: isDarkTheme && "white" }}>Location</Text>
-                                </View>
-
-
-                            </View>
-
-                            <MapView customMapStyle={isDarkTheme && darkMapStyle} style={style.map2} region={mapRegion} showsUserLocation showsMyLocationButton={false}>
-
-                                <Marker coordinate={mapRegion}>
-                                    <View style={{ alignItems: 'center' }}>
-                                        <Image source={UserImage} />
-                                    </View>
-                                </Marker>
-
-                                <Marker coordinate={{ latitude: selectedCar.latitude, longitude: selectedCar.longitude }}>
-                                    <View style={{ alignItems: 'center' }}>
-                                        <Image source={CarImage} style={{ width: 40, height: 40 }} />
-                                    </View>
-                                </Marker>
-
-                                <Polyline coordinates={[{ latitude: mapRegion.latitude, longitude: mapRegion.longitude }, { latitude: selectedCar.latitude, longitude: selectedCar.longitude }]} strokeColor={isDarkTheme ? "white":"black"} strokeWidth={1} />
-                            </MapView>
-
-                            {/* CARS  */}
-
-                            <ScrollView showsHorizontalScrollIndicator={false} horizontal={true} contentContainerStyle={style.cards}>
-                                <View style={{ backgroundColor: isDarkTheme ? "#292929" : "white", padding: 10, marginRight: 20, width: 320, borderRadius: 9, borderWidth: isDarkTheme ? 0 : 0.3, borderColor: "#A0A1A3" }}>
-
-                                    <Text style={{ textAlign: "center", color: isDarkTheme ? "white" : "#767575", marginBottom: 10 }}>Your ride has started have to pay</Text>
-                                    <Text style={{ textAlign: "center", fontWeight: "800", marginBottom: 10, color: isDarkTheme && "white" }}>${price}</Text>
-                                    <Pressable style={{ backgroundColor: "#2666cf", width: "100%", height: 40, justifyContent: "center", alignItems: "center", marginTop: 13, borderRadius: 8 }}>
-                                        <Text onPress={completeRide} style={{ color: "#fff" }}>End Ride</Text>
-                                    </Pressable>
-
-                                </View>
-                            </ScrollView>
-
-                        </View>
-                    )
-                }
-
-
             </ScrollView>
+
+            <Toast/>
 
 
             {
