@@ -75,9 +75,9 @@ const document = () => {
                 <Image source={L3} />
             </Pressable>
 
-            <View style={[nameStyle.btn, { width: "100%" }]}>
-                <Text onPress={() => router.push("/driver/upload")} style={nameStyle.btnTxt}>Continue</Text>
-            </View>
+            <Pressable onPress={() => router.push("/driver/upload")} style={[nameStyle.btn, { width: "100%" }]}>
+                <Text style={nameStyle.btnTxt}>Continue</Text>
+            </Pressable>
 
         </View>
     )

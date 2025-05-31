@@ -25,9 +25,9 @@ const final = () => {
             <Text style={{ color: "#979292",textAlign:"center",marginTop:20 }}>I Agree to the above terms</Text>
 
 
-            <View style={[nameStyle.btn, { width: "100%" }]}>
-                <Text onPress={() => router.push("/rider/home")} style={nameStyle.btnTxt}>Continue</Text>
-            </View>
+            <Pressable onPress={() => router.push("/rider/home")} style={[nameStyle.btn, { width: "100%" }]}>
+                <Text style={nameStyle.btnTxt}>Continue</Text>
+            </Pressable>
 
         </View>
     )

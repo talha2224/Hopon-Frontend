@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import style from '../../../style/rider/home/saved';
 import BottomNav from '../../../components/BottomNav';
@@ -7,20 +7,30 @@ import checkon from '../../../assets/images/checkon.png';
 import checkoff from '../../../assets/images/checkoff.png';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../../hooks/themeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Lang = () => {
     const [selectedLanguage, setSelectedLanguage] = useState('English'); // Track selected language
     const router = useRouter();
     const { isDarkTheme } = useTheme();
 
-    const handleLanguageSelect = (language) => {
-        setSelectedLanguage(language); // Set the selected language
+    const handleLanguageSelect = async (language) => {
+        setSelectedLanguage(language);
+        await AsyncStorage.setItem("language", language)
     };
 
     const languages = [
-        "English", "French", "Russian", "German", "Korean", 
+        "English", "French", "Russian", "German", "Korean",
         "Chinese", "Ukrainian", "Spanish", "Arabic"
     ];
+
+    useEffect(() => {
+        (async () => {
+            let language = await AsyncStorage.getItem("language");
+            setSelectedLanguage(language)
+
+        })();
+    })
 
     return (
         <View style={isDarkTheme ? style.containerDark : style.container}>
@@ -31,11 +41,11 @@ const Lang = () => {
             </View>
 
             <ScrollView contentContainerStyle={isDarkTheme ? style.ScrollcontainerDark : style.Scrollcontainer}>
-                <View style={{ backgroundColor: "#333333", paddingVertical: 10, paddingHorizontal: 1, borderRadius: 10, marginHorizontal: 10 }}>
+                <View style={{ backgroundColor: isDarkTheme ? "#333333" : "#ffff", paddingVertical: 10, paddingHorizontal: 1, borderRadius: 10, marginHorizontal: 10 }}>
                     {languages.map((language, index) => (
                         <View key={index} style={{ marginBottom: 15, marginHorizontal: 10, display: "flex", justifyContent: "space-between", alignItems: "center", flexDirection: "row", borderBottomColor: "#F9F9F9", borderBottomWidth: isDarkTheme ? 0 : 1, paddingBottom: 10 }}>
                             <Text style={{ color: isDarkTheme ? "white" : "#323232", marginBottom: 2 }}>{language}</Text>
-                            <Pressable onPress={() => handleLanguageSelect(language)}>
+                            <Pressable onPress={() => { handleLanguageSelect(language) }}>
                                 <Image style={{ width: 15, height: 15 }} source={selectedLanguage === language ? checkon : checkoff} />
                             </Pressable>
                         </View>

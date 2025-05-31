@@ -141,19 +141,31 @@ const Accepted = () => {
         try {
             let driverId = await AsyncStorage.getItem('driverId');
             const ride = await axios.get(`${config.baseUrl}/ride/info/driver/${driverId}`);
-            setRideDetails(ride?.data?.data)
-            let location = await Location.getCurrentPositionAsync({});
-            setMapRegion({latitude: location?.coords?.latitude ? location?.coords?.latitude : 0, longitude: location?.coords?.longitude ?  location?.coords?.longitude : 0});
-            const res = await axios.post(`${config.baseUrl}/driver/update/location`, { driverId, longitude: location?.coords?.longitude, latitude: location?.coords?.latitude });
+            if(ride?.data?.data){
+                setRideDetails(ride?.data?.data)
+                let location = await Location.getCurrentPositionAsync({});
+                setMapRegion({latitude: location?.coords?.latitude ? location?.coords?.latitude : 0, longitude: location?.coords?.longitude ?  location?.coords?.longitude : 0});
+                const res = await axios.post(`${config.baseUrl}/driver/update/location`, { driverId, longitude: location?.coords?.longitude, latitude: location?.coords?.latitude });
+            }
+            else{
+                router.push("/driver/home")   
+            }
         }
         catch (error) {
+            router.push("/driver/home")
             console.log(error, 'error in fetchActiveRide')
         }
     }
 
     const completeRide = async () => {
-        router.push("/driver/home")
-        const res = await axios.post(`${config.baseUrl}/ride/end/${rideDetails?._id}`,)
+        try {
+            const res = await axios.post(`${config.baseUrl}/ride/end/${rideDetails?._id}`,)
+            console.log(res?.data,'res?.data')
+            router.push("/driver/home")
+        } 
+        catch (error) {
+            console.log(error)
+        }
     }
 
     useEffect(() => {
@@ -347,9 +359,9 @@ const Accepted = () => {
 
                                         </View>
 
-                                        <View style={[{ width: "100%", backgroundColor: "#2666CF", height: 40, justifyContent: "center", alignItems: "center", marginTop: 20, borderRadius: 5 }]}>
-                                            <Text onPress={() => { setEnd(false); setactiveStatus("off") }} style={{ color: "#ffff", fontWeight: "bold", fontSize: 15 }}>Submit</Text>
-                                        </View>
+                                        <Pressable onPress={() => { setEnd(false); setactiveStatus("off") }} style={[{ width: "100%", backgroundColor: "#2666CF", height: 40, justifyContent: "center", alignItems: "center", marginTop: 20, borderRadius: 5 }]}>
+                                            <Text style={{ color: "#ffff", fontWeight: "bold", fontSize: 15 }}>Submit</Text>
+                                        </Pressable>
 
 
                                     </View>

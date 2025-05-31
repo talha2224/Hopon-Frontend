@@ -19,6 +19,8 @@ import msgImage from '../../../assets/images/msg.png';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import config from '../../../config';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+
 const Account = () => {
     const router = useRouter()
     const { isDarkTheme, toggleTheme } = useTheme();
@@ -126,6 +128,13 @@ const Account = () => {
                                 <Image source={editImage} />
                             </View>
                             <Text style={{ color: isDarkTheme ? "white" : "#454F60" }}>Support</Text>
+                        </Pressable>
+
+                        <Pressable onPress={() => router.push("/driver/home/terms")} style={{ display: "flex", alignItems: "center", flexDirection: "row", marginBottom: 10, paddingBottom: 10, borderBottomColor: "#F2F2F2", borderBottomWidth: isDarkTheme ? 0 : 1 }}>
+                            <View style={{ backgroundColor: "#F2F2F2", display: "flex", justifyContent: "center", alignItems: "center", borderRadius: 200, width: 32, height: 32, marginRight: 5 }}>
+                                <MaterialIcons name="privacy-tip" size={20} color="black" />
+                            </View>
+                            <Text style={{ color: isDarkTheme ? "white" : "#454F60" }}>Terms & Conditions</Text>
                         </Pressable>
 
                         <Pressable onPress={() => router.push("/rider/home/msg")} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexDirection: "row", marginBottom: 10, paddingBottom: 10, borderBottomColor: "#F2F2F2", borderBottomWidth: isDarkTheme ? 0 : 1 }}>

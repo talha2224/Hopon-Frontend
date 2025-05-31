@@ -83,12 +83,9 @@ const vehicle = () => {
                 <Image source={L3} />
             </Pressable>
 
-            <View style={[nameStyle.btn, { width: "100%" }]}>
-                <Text onPress={checkFiles}
-                    // router.push("/driver/car")
-                    // } 
-                    style={nameStyle.btnTxt}>Continue</Text>
-            </View>
+            <Pressable style={[nameStyle.btn, { width: "100%" }]}>
+                <Text onPress={checkFiles} style={nameStyle.btnTxt}>Continue</Text>
+            </Pressable>
 
         </View>
     )

@@ -141,10 +141,19 @@ const Accepted = () => {
     };
     const completeRide = async () => {
         Toast.show({ type: 'success', text1: 'Compeleting Ride...', text2: 'Please wait while we process your information.', autoHide: autoHide });
-        const res = await axios.post(`${devConfig.baseUrl}/ride/end/${rideDetails._id}`,)
-        setAutoHide(true)
-        await AsyncStorage.removeItem("booked")
-        router.push("/rider/home/feedback")
+        try {
+            const res = await axios.post(`${devConfig.baseUrl}/ride/end/${rideDetails._id}`,)
+            console.log(res.data,'res.data of complete ride')
+            if(res.data){
+                setAutoHide(true)
+                await AsyncStorage.removeItem("booked")
+                router.push("/rider/home/feedback")
+            }
+            
+        } 
+        catch (error) {
+            await AsyncStorage.removeItem("booked")
+        }
     }
 
     const createChat = async ()=>{

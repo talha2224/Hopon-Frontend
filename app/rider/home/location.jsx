@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, StatusBar, Text, TextInput, View } from 'react-native';
 import style from '../../../style/rider/home/location';
 import MapView, { Marker, Polyline } from 'react-native-maps';
@@ -9,7 +9,7 @@ import OldImage from '../../../assets/images/old.png';
 import GroupImage from '../../../assets/images/group.png';
 import AlertImage from '../../../assets/images/alert.png';
 import { AntDesign, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useTheme } from '../../../hooks/themeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import devConfig from '../../../config';
@@ -125,7 +125,6 @@ const Index = () => {
     const [pick, setpick] = useState('');
     const [price, setprice] = useState(0);
     const [autoHide, setAutoHide] = useState(false)
-    const [hasRedirected, setHasRedirected] = useState(false);
 
 
     const userLocation = async () => {
@@ -215,6 +214,7 @@ const Index = () => {
     const cancelRide = async () => {
 
         try {
+            await AsyncStorage.removeItem("booked")
             setAutoHide(false)
             Toast.show({type: 'success',text1: 'Cancelling Ride...',text2: 'Please wait while we process your information.',autoHide:autoHide});
             let riderId = await AsyncStorage.getItem('riderId');
@@ -248,19 +248,19 @@ const Index = () => {
     
     const getActiveBooking = async () => {
         try {
-            await AsyncStorage.setItem("booked","true")
             let riderId = await AsyncStorage.getItem('riderId');
             const bookingInfo = await axios.get(`${devConfig.baseUrl}/ride/info/rider/${riderId}`);
             
             if (bookingInfo?.data?.data?.driver?.location?.coordinates[0]) {
                 setrideDetails(bookingInfo?.data?.data);
-                
-                setSelectedCar({
-                    latitude: bookingInfo?.data?.data?.driver?.location?.coordinates[1] || 0,
-                    longitude: bookingInfo?.data?.data?.driver?.location?.coordinates[0] || 0,
-                });
+                await AsyncStorage.setItem("booked","true")
+                setSelectedCar({latitude: bookingInfo?.data?.data?.driver?.location?.coordinates[1] || 0,longitude: bookingInfo?.data?.data?.driver?.location?.coordinates[0] || 0,});
                 setLoading(true);
                 setCount(10);
+                router.push("/rider/home/accepted")
+            }
+            else{
+                await AsyncStorage.removeItem("booked")
             }
         } 
         catch (error) {
@@ -270,17 +270,34 @@ const Index = () => {
 
     const RideExits = async()=>{
         let res = await AsyncStorage.getItem("booked")
-        res=="true" && router.push("/rider/home/accepted")
+        // res=="true" && router.push("/rider/home/accepted")
+
     }
 
     useEffect(()=>{
         RideExits()
     },[])
 
-    useEffect(() => {
-        const intervalId = setInterval(getActiveBooking, 10000);
-        return () => {clearInterval(intervalId);};
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            let isActive = true; // Important for preventing state updates on unmount
+
+            const fetchBooking = async () => {
+                try {
+                    const booking = await getActiveBooking();
+                } catch (error) {
+                    console.error("Error in fetchBooking:", error)
+                }
+            }
+            fetchBooking()
+            const intervalId = setInterval(fetchBooking, 10000);
+
+            return () => {
+                isActive = false;
+                clearInterval(intervalId);
+            };
+        }, [])
+    );
 
     useEffect(() => {
         const joinDriverRoom = async () => {
@@ -292,15 +309,9 @@ const Index = () => {
 
         socket.on('connect', () => { console.log('Socket connected:', socket.id); });
 
-        socket.on('cancelRide', (ride) => {
-            router.push("/rider/home/canceled")
-        });
+        socket.on('cancelRide', (ride) => {router.push("/rider/home/canceled")});
 
-        return () => {
-            socket.off('connect');
-            socket.off('cancelRide');
-            socket.disconnect();
-        };
+        return () => {socket.off('connect');socket.off('cancelRide');socket.disconnect();};
     }, []);
 
     useEffect(() => {
@@ -356,9 +367,9 @@ const Index = () => {
                             <Text style={{ marginTop: 10, color: isDarkTheme ? "#fff" : "#A0A1A3" }}>Drop Off</Text>
                             <TextInput editable={false} selection={{ start: 0, end: 0 }} value={dropoffAddress} placeholder='' style={{ marginTop: 5, borderBottomWidth: 1, borderBottomColor: "#A0A1A3", color: "#fff" }} />
 
-                            <View style={{ backgroundColor: "#2666cf", width: "100%", height: 40, justifyContent: "center", alignItems: "center", marginTop: 10, borderRadius: 8, position: "absolute", bottom: 40, left: 20 }}>
-                                <Text onPress={() => setCount(1)} style={{ color: "#fff" }}>Confirm location</Text>
-                            </View>
+                            <Pressable onPress={() => setCount(1)}  style={{ backgroundColor: "#2666cf", width: "100%", height: 40, justifyContent: "center", alignItems: "center", marginTop: 10, borderRadius: 8, position: "absolute", bottom: 40, left: 20 }}>
+                                <Text style={{ color: "#fff" }}>Confirm location</Text>
+                            </Pressable>
                         </View>
                     )
                 }
@@ -430,15 +441,15 @@ const Index = () => {
                                                 </View>
 
                                                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 5 }}>
-                                                    <View style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center" }}>
-                                                        <Text style={{ color: isDarkTheme && "#fff" }} onPress={() => { setSingleCar(true); setSelectedCar(i); calculatePrice() }}>2 {estimateTimeToReach(i?.longitude, i?.i?.latitude, mapRegion.longitude, mapRegion.latitude)}</Text>
-                                                    </View>
-                                                    <View style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center" }}>
-                                                        <Text style={{ color: isDarkTheme && "#fff" }} onPress={() => { setSingleCar(true); setSelectedCar(i); calculatePrice() }}>2 Gear</Text>
-                                                    </View>
-                                                    <View style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center" }}>
-                                                        <Text style={{ color: isDarkTheme && "#fff" }} onPress={() => { setSingleCar(true); setSelectedCar(i); calculatePrice() }}>{calculateDistanceInKm(i?.longitude, i?.i?.latitude, mapRegion.longitude, mapRegion.latitude)}KM</Text>
-                                                    </View>
+                                                    <Pressable onPress={() => { setSingleCar(true); setSelectedCar(i); calculatePrice() }} style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center" }}>
+                                                        <Text style={{ color: isDarkTheme && "#fff" }}>2 {estimateTimeToReach(i?.longitude, i?.i?.latitude, mapRegion.longitude, mapRegion.latitude)}</Text>
+                                                    </Pressable>
+                                                    <Pressable onPress={() => { setSingleCar(true); setSelectedCar(i); calculatePrice() }} style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center" }}>
+                                                        <Text style={{ color: isDarkTheme && "#fff" }}>2 Gear</Text>
+                                                    </Pressable>
+                                                    <Pressable onPress={() => { setSingleCar(true); setSelectedCar(i); calculatePrice() }} style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center" }}>
+                                                        <Text style={{ color: isDarkTheme && "#fff" }}>{calculateDistanceInKm(i?.longitude, i?.i?.latitude, mapRegion.longitude, mapRegion.latitude)}KM</Text>
+                                                    </Pressable>
                                                 </View>
 
 
@@ -519,21 +530,21 @@ const Index = () => {
                                             </View>
 
                                             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 5 }}>
-                                                <View style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center" }}>
+                                                <Pressable onPress={() => setSingleCar(true)} style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center" }}>
                                                     <Text style={{ color: isDarkTheme && "white" }} onPress={() => setSingleCar(true)}>2 min</Text>
-                                                </View>
-                                                <View style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center" }}>
+                                                </Pressable>
+                                                <Pressable onPress={() => setSingleCar(true)} style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center" }}>
                                                     <Text style={{ color: isDarkTheme && "white" }} onPress={() => setSingleCar(true)}>2 Gear</Text>
-                                                </View>
-                                                <View style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center" }}>
-                                                    <Text style={{ color: isDarkTheme && "white" }} onPress={() => setSingleCar(true)}>2 KM</Text>
-                                                </View>
+                                                </Pressable>
+                                                <Pressable onPress={() => setSingleCar(true)} style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center" }}>
+                                                    <Text style={{ color: isDarkTheme && "white" }}>2 KM</Text>
+                                                </Pressable>
                                             </View>
 
 
-                                            <View style={{ backgroundColor: "#2666cf", width: "100%", height: 40, justifyContent: "center", alignItems: "center", marginTop: 13, borderRadius: 8 }}>
-                                                <Text onPress={() => setPay(true)} style={{ color: "#fff" }}>Book Ride {price}</Text>
-                                            </View>
+                                            <Pressable onPress={() => setPay(true)} style={{ backgroundColor: "#2666cf", width: "100%", height: 40, justifyContent: "center", alignItems: "center", marginTop: 13, borderRadius: 8 }}>
+                                                <Text style={{ color: "#fff" }}>Book Ride {price}</Text>
+                                            </Pressable>
 
 
                                         </View> :
@@ -544,14 +555,14 @@ const Index = () => {
 
 
                                             <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: 5 }}>
-                                                <View style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center", flex: 1 }}>
-                                                    <Text style={{ color: isDarkTheme && "white" }} onPress={() => setSingleCar(true)}>Cash</Text>
-                                                </View>
+                                                <Pressable onPress={() => setSingleCar(true)} style={{ backgroundColor: isDarkTheme ? "#323232" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center", flex: 1 }}>
+                                                    <Text style={{ color: isDarkTheme && "white" }}>Cash</Text>
+                                                </Pressable>
                                             </View>
 
 
-                                            <Pressable style={{ backgroundColor: "#2666cf", width: "100%", height: 40, justifyContent: "center", alignItems: "center", marginTop: 13, borderRadius: 8 }}>
-                                                <Text onPress={confirmRide} style={{ color: "#fff" }}>Confirm Ride</Text>
+                                            <Pressable onPress={confirmRide} style={{ backgroundColor: "#2666cf", width: "100%", height: 40, justifyContent: "center", alignItems: "center", marginTop: 13, borderRadius: 8 }}>
+                                                <Text style={{ color: "#fff" }}>Confirm Ride</Text>
                                             </Pressable>
 
 
@@ -615,14 +626,14 @@ const Index = () => {
                                 </View>
 
                                 <View style={{ marginTop: 10, justifyContent: "space-between", alignItems: "center", flexDirection: "row", backgroundColor: isDarkTheme ? "#292929" : "#FAFAFA", padding: 10, width: "95%", margin: 10, borderRadius: isDarkTheme ? 8 : 0 }}>
-                                    <View style={{ backgroundColor: isDarkTheme ? "#494949" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center", width: 70 }}>
-                                        <Text onPress={() => setSingleCar(true)} style={{ color: isDarkTheme && "white" }}>Cash </Text>
-                                    </View>
+                                    <Pressable onPress={() => setSingleCar(true)}style={{ backgroundColor: isDarkTheme ? "#494949" : "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center", width: 70 }}>
+                                        <Text style={{ color: isDarkTheme && "white" }}>Cash </Text>
+                                    </Pressable>
                                 </View>
 
-                                <View style={{ backgroundColor: "#2666cf", width: "95%", height: 40, justifyContent: "center", alignItems: "center", marginVertical: 13, borderRadius: 8 }}>
-                                    <Text onPress={() => { setDetailView(false); setEnd(true) }} style={{ color: "#fff" }}>View trip</Text>
-                                </View>
+                                <Pressable onPress={() => { setDetailView(false); setEnd(true) }} style={{ backgroundColor: "#2666cf", width: "95%", height: 40, justifyContent: "center", alignItems: "center", marginVertical: 13, borderRadius: 8 }}>
+                                    <Text style={{ color: "#fff" }}>View trip</Text>
+                                </Pressable>
                             </View>
                         </View>
                     )
@@ -652,19 +663,19 @@ const Index = () => {
                                 </View>
 
 
-                                <View style={{ width: "95%", height: 40, justifyContent: "center", alignItems: "center", marginVertical: 0, borderRadius: 8, borderWidth: 1, borderColor: !isDarkTheme ? "#F1F1F1" : "#4F4F4F", }}>
-                                    <Text onPress={() => { setConfirm(true); setEnd(false) }} style={{ color: "#FF2929" }}>Cancel trip</Text>
-                                </View>
+                                <Pressable onPress={() => { setConfirm(true); setEnd(false) }} style={{ width: "95%", height: 40, justifyContent: "center", alignItems: "center", marginVertical: 0, borderRadius: 8, borderWidth: 1, borderColor: !isDarkTheme ? "#F1F1F1" : "#4F4F4F", }}>
+                                    <Text style={{ color: "#FF2929" }}>Cancel trip</Text>
+                                </Pressable>
 
 
-                                <View style={{ width: "95%", height: 40, justifyContent: "center", alignItems: "center", marginTop: 10, borderRadius: 8, borderWidth: 1, borderColor: !isDarkTheme ? "#F1F1F1" : "#4F4F4F", }}>
-                                    <Text onPress={() => { setConfirm(true); setEnd(false) }} style={{ color: "#2666cf" }}>Add stop</Text>
-                                </View>
+                                <Pressable onPress={() => { setConfirm(true); setEnd(false) }} style={{ width: "95%", height: 40, justifyContent: "center", alignItems: "center", marginTop: 10, borderRadius: 8, borderWidth: 1, borderColor: !isDarkTheme ? "#F1F1F1" : "#4F4F4F", }}>
+                                    <Text style={{ color: "#2666cf" }}>Add stop</Text>
+                                </Pressable>
 
 
-                                <View style={{ backgroundColor: "#2666cf", width: "95%", height: 40, justifyContent: "center", alignItems: "center", marginVertical: 10, borderRadius: 8 }}>
-                                    <Text onPress={() => { setConfirm(true); setEnd(false) }} style={{ color: "#fff" }}>End trip</Text>
-                                </View>
+                                <Pressable onPress={() => { setConfirm(true); setEnd(false) }} style={{ backgroundColor: "#2666cf", width: "95%", height: 40, justifyContent: "center", alignItems: "center", marginVertical: 10, borderRadius: 8 }}>
+                                    <Text style={{ color: "#fff" }}>End trip</Text>
+                                </Pressable>
                             </View>
                         </View>
                     )
@@ -686,12 +697,12 @@ const Index = () => {
 
 
                                 <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", marginVertical: 20, marginLeft: 10 }}>
-                                    <View style={{ backgroundColor: "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center", flex: 1 }}>
-                                        <Text onPress={() => setConfirm(false)}>No </Text>
-                                    </View>
-                                    <View style={{ backgroundColor: "#FF2929", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center", flex: 1 }}>
-                                        <Text style={{ color: "white" }} onPress={() => { setConfirm(false); router.push("/rider/home/canceled") }}>Yes, cancel</Text>
-                                    </View>
+                                    <Pressable onPress={() => setConfirm(false)} style={{ backgroundColor: "#F1F1F1", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center", flex: 1 }}>
+                                        <Text>No </Text>
+                                    </Pressable>
+                                    <Pressable onPress={() => { setConfirm(false); router.push("/rider/home/canceled") }} style={{ backgroundColor: "#FF2929", padding: 10, marginRight: 10, borderRadius: 10, justifyContent: "center", alignItems: "center", flex: 1 }}>
+                                        <Text style={{ color: "white" }}>Yes, cancel</Text>
+                                    </Pressable>
                                 </View>
 
                             </View>
@@ -711,8 +722,8 @@ const Index = () => {
                         <View>
                             <Text style={{ color: "#ffff", marginTop: 10, paddingLeft: 20, fontSize: 17 }}>Request has been sent to the driver</Text>
                             <Text style={{ color: "#ffff", marginTop: 5, paddingLeft: 20 }}>Wait for the driver to respond</Text>
-                            <Pressable style={{ backgroundColor: "#fff", width: "100%", height: 40, justifyContent: "center", alignItems: "center", marginTop: 13, borderRadius: 8, marginLeft: 20, marginBottom: 10 }}>
-                                <Text onPress={cancelRide} style={{ color: "#2666cf" }}>Cancel Ride</Text>
+                            <Pressable  onPress={cancelRide} style={{ backgroundColor: "#fff", width: "100%", height: 40, justifyContent: "center", alignItems: "center", marginTop: 13, borderRadius: 8, marginLeft: 20, marginBottom: 10 }}>
+                                <Text style={{ color: "#2666cf" }}>Cancel Ride</Text>
                             </Pressable>
                         </View>
                     </View>

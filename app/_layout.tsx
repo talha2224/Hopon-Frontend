@@ -31,7 +31,7 @@ export default function RootLayout() {
 
     <ThemeProviderContext>
       <Toast />
-      <StripeProvider publishableKey='pk_test_51OjJpTASyMRcymO6x2PBK1nrHChycNMNXj7HHvTRffOp5xufCj3WRSCLoep1tGp5Ilx3IWj7ck5yqrwEH8VSRKn80055Kvyelu'>
+      <StripeProvider publishableKey='pk_live_51QRjitJHV7mT4OHggH69uWhX6iPu36diHSmYdIcGRhngcHF1yUTg7WhyBtpwwzJ3GEf8genU5QVHsA0fDKzcXgaw00AokH7Bgp'>
 
         <Stack>
           <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -50,6 +50,7 @@ export default function RootLayout() {
           <Stack.Screen name="rider/home/profile" options={{ headerShown: false }} />
           <Stack.Screen name="rider/home/profile2" options={{ headerShown: false }} />
           <Stack.Screen name="rider/home/msg" options={{ headerShown: false }} />
+          <Stack.Screen name="rider/home/terms" options={{ headerShown: false }} />
           <Stack.Screen name="rider/home/messages" options={{ headerShown: false }} />
           <Stack.Screen name="rider/home/notification2" options={{ headerShown: false }} />
           <Stack.Screen name="rider/home/saved" options={{ headerShown: false }} />
@@ -94,6 +95,7 @@ export default function RootLayout() {
           <Stack.Screen name="driver/home/notification2" options={{ headerShown: false }} />
           <Stack.Screen name="driver/home/lang" options={{ headerShown: false }} />
           <Stack.Screen name="driver/home/emergency" options={{ headerShown: false }} />
+          <Stack.Screen name="driver/home/terms" options={{ headerShown: false }} />
         </Stack>
         
       </StripeProvider>

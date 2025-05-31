@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Image, Text, View,Pressable} from 'react-native';
+import { Image, Text, View, Pressable } from 'react-native';
 import style from '../../../style/rider/home/home';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import UserImage from '../../../assets/images/user.png';
 import CarImage from '../../../assets/images/car.png';
 import LocationImage from '../../../assets/images/location.png';
@@ -13,7 +14,6 @@ import MapImage from '../../../assets/images/map.png';
 import BottomNav from '../../../components/BottomNav';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../../hooks/themeContext';
-import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DifferenceImage from '../../../assets/images/difference.png'
 import axios from 'axios';
@@ -104,6 +104,32 @@ const darkMapStyle = [
 ];
 
 
+const translations = {
+    French: { Rider: "Cavalier", Driver: "Conducteur", Greet: "Bonjour Flora" },
+    English: { Rider: "Rider", Driver: "Driver", Greet: "Good Morning Flora" },
+    Russian: { Rider: "Всадник", Driver: "Водитель", Greet: "Доброе утро, Флора" },
+    German: { Rider: "Reiter", Driver: "Fahrer", Greet: "Guten Morgen Flora" },
+    Korean: { Rider: "라이더", Driver: "운전사", Greet: "좋은 아침 플로라" },
+    Chinese: { Rider: "骑手", Driver: "司机", Greet: "早上好，弗洛拉" },
+    Ukrainian: { Rider: "Вершник", Driver: "Водій", Greet: "Доброго ранку, Флора" },
+    Spanish: { Rider: "Jinete", Driver: "Conductor", Greet: "Buenos días, Flora" },
+    Arabic: { Rider: "راكب", Driver: "سائق", Greet: "صباح الخير فلورا" },
+};
+const getTranslations = async () => {
+    try {
+        let language = await AsyncStorage.getItem("language");
+
+        if (translations[language]) {
+            return translations[language];
+        }
+        return translations["English"];
+    }
+    catch (error) {
+        console.error("Error fetching language:", error);
+        return translations["English"];
+    }
+};
+
 const Index = () => {
     const router = useRouter()
     const [mapRegion, setMapRegion] = useState({ latitude: 37.78825, longitude: -122.4325, latitudeDelta: 0.0922, longitudeDelta: 0.0421 });
@@ -111,6 +137,8 @@ const Index = () => {
     const [showLocation] = useState(false)
     const { isDarkTheme } = useTheme();
     const [activeRides, setActiveRide] = useState(null)
+    const [words, setWords] = useState({ Rider: "Rider", Driver: "Driver", Greet: "Good Morning Flora" })
+
 
 
     const userLocation = async () => {
@@ -128,6 +156,8 @@ const Index = () => {
 
         setDrivers(generatedDrivers);
     };
+
+    
     const handlePlaceSelection = async (data, details) => {
         if (details) {
             const { lat, lng } = details.geometry.location;
@@ -153,6 +183,7 @@ const Index = () => {
         try {
             let riderId = await AsyncStorage.getItem('riderId');
             const bookingInfo = await axios.get(`${devConfig.baseUrl}/ride/info/rider/${riderId}`);
+            let language = await AsyncStorage?.getItem("language");
             setActiveRide(bookingInfo?.data?.data, 'Booking Information In Home Page')
         } catch (error) {
             console.error('No Active Booking Found In Home Page', error);
@@ -163,6 +194,15 @@ const Index = () => {
         getActiveBooking();
         userLocation();
     }, []);
+
+    useEffect(() => {
+        const fetchTranslations = async () => {
+            const translatedWords = await getTranslations();
+            setWords(translatedWords);
+        };
+        fetchTranslations();
+    }, []);
+
 
 
     return (
@@ -197,10 +237,10 @@ const Index = () => {
 
                     <View style={isDarkTheme ? style.btnContainerDark : style.btnContainer}>
                         <View style={style.btn1}>
-                            <Text>Rider</Text>
+                            <Text>{words.Rider}</Text>
                         </View>
                         <View>
-                            <Text style={isDarkTheme ? style.btn2TxtDark : style.btn2Txt}>Driver</Text>
+                            <Text style={isDarkTheme ? style.btn2TxtDark : style.btn2Txt}>{words.Driver}</Text>
                         </View>
                     </View>
 
@@ -213,13 +253,13 @@ const Index = () => {
 
                 <View style={style.locationContainer}>
                     <View style={[isDarkTheme ? style.locationDark : style.location, { width: "90%" }]}>
-                        <Text style={{ fontSize: 20, color: isDarkTheme && "#ffff" }}>Good Morning Flora</Text>
+                        <Text style={{ fontSize: 20, color: isDarkTheme && "#ffff" }}>{words?.Greet}</Text>
 
                         <GooglePlacesAutocomplete
                             placeholder="Where To ?"
                             fetchDetails={true}
                             onPress={handlePlaceSelection}
-                            query={{ key: 'AIzaSyBQXmyICJtSYlLcdwURpxGyLMgIFbi4-hE', language: 'en', }}
+                            query={{ key: 'AIzaSyDo4GPTF9dChnFkV-uX5zoiA7JHZongxPI', language: 'en', }}
                             styles={{ textInputContainer: { borderRadius: 5, paddingHorizontal: 10, }, textInput: { marginTop: 10, height: 40, color: isDarkTheme ? '#ffff' : "#000", paddingHorizontal: 10, borderRadius: 10, backgroundColor: isDarkTheme ? "#333233" : "#FAFAFA" }, predefinedPlacesDescription: { color: '#1faadb', }, }}
                             debounce={300}
                         />
@@ -274,11 +314,11 @@ const Index = () => {
                                 <View style={{ display: "flex", alignItems: "center", flexDirection: "row", marginTop: 10 }}>
                                     <Image source={DifferenceImage} />
                                     <View>
-                                        <Text style={{ fontSize: 15, fontWeight: "500", color: "#fff", marginLeft: 8, }}>{activeRides?.pickUpAddress?activeRides?.pickUpAddress?.split(" ")[0] + " " + activeRides?.pickUpAddress?.split(" ")[1] + " " + activeRides?.pickUpAddress?.split(" ")[2] + " " + activeRides?.pickUpAddress?.split(" ")[3] + " " + activeRides?.pickUpAddress?.split(" ")[4]:"loading"}</Text>
+                                        <Text style={{ fontSize: 15, fontWeight: "500", color: "#fff", marginLeft: 8, }}>{activeRides?.pickUpAddress ? activeRides?.pickUpAddress?.split(" ")[0] + " " + activeRides?.pickUpAddress?.split(" ")[1] + " " + activeRides?.pickUpAddress?.split(" ")[2] + " " + activeRides?.pickUpAddress?.split(" ")[3] + " " + activeRides?.pickUpAddress?.split(" ")[4] : "loading"}</Text>
                                         <Text style={{ fontSize: 15, fontWeight: "500", color: "#fff", marginLeft: 8, marginTop: 4, }}>{activeRides?.dropoffAddress ? activeRides?.dropoffAddress?.split(" ")[0] + " " + activeRides?.dropoffAddress?.split(" ")[1] + " " + activeRides?.dropoffAddress?.split(" ")[2] + " " + activeRides?.dropoffAddress?.split(" ")[3] : "loading"}</Text>
                                     </View>
                                 </View>
-                                <Pressable onPress={()=>{router.push("/rider/home/accepted")}} style={{marginTop:10,backgroundColor:"white",paddingHorizontal:10,paddingVertical:5,borderRadius:5,width:100,justifyContent:"center",alignItems:"center"}}>
+                                <Pressable onPress={() => { router.push("/rider/home/accepted") }} style={{ marginTop: 10, backgroundColor: "white", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 5, width: 100, justifyContent: "center", alignItems: "center" }}>
                                     <Text>Track Now</Text>
                                 </Pressable>
                             </View>
@@ -318,12 +358,12 @@ const Index = () => {
                             <Image source={MapImage} style={{ marginBottom: 5 }} />
                             <Text style={{ fontSize: 16, fontWeight: "700", color: isDarkTheme && "#fff" }}>Access your location</Text>
                             <Text style={{ color: "#979292" }}>Allow app to access your location </Text>
-                            <View style={{ width: "100%", height: 40, justifyContent: "center", alignItems: "center", borderColor: "#F0F0F0", borderWidth: 1, marginTop: 10, borderRadius: 8 }}>
-                                <Text onPress={() => router.push("/rider/home/location")} style={{ color: isDarkTheme ? "#fff" : "#2666cf" }}>Use current location</Text>
-                            </View>
-                            <View style={{ backgroundColor: "#2666cf", width: "100%", height: 40, justifyContent: "center", alignItems: "center", marginTop: 10, borderRadius: 8 }}>
-                                <Text onPress={() => router.push("/rider/home/location")} style={{ color: "#fff" }}>Enter my new location</Text>
-                            </View>
+                            <Pressable onPress={() => router.push("/rider/home/location")} style={{ width: "100%", height: 40, justifyContent: "center", alignItems: "center", borderColor: "#F0F0F0", borderWidth: 1, marginTop: 10, borderRadius: 8 }}>
+                                <Text style={{ color: isDarkTheme ? "#fff" : "#2666cf" }}>Use current location</Text>
+                            </Pressable>
+                            <Pressable onPress={() => router.push("/rider/home/location")} style={{ backgroundColor: "#2666cf", width: "100%", height: 40, justifyContent: "center", alignItems: "center", marginTop: 10, borderRadius: 8 }}>
+                                <Text style={{ color: "#fff" }}>Enter my new location</Text>
+                            </Pressable>
                         </View>
                     </View>
                 )

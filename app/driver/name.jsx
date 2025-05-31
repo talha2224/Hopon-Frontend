@@ -34,9 +34,9 @@ const name = () => {
             <Text style={[nameStyle.label2]}>Last Name</Text>
             <TextInput value={lastName} onChangeText={setLastName} style={[nameStyle.input, { width: "100%" }]} placeholder='Doe' />
 
-            <View style={[nameStyle.btn, { width: "100%" }]}>
+            <Pressable style={[nameStyle.btn, { width: "100%" }]}>
                 <Text onPress={onSave} style={nameStyle.btnTxt}>Continue</Text>
-            </View>
+            </Pressable>
 
         </View>
     )

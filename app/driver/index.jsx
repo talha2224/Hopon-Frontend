@@ -1,5 +1,5 @@
 import indexstyle from '../../style/driver/index'
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { Image, Pressable, Text, TextInput, ToastAndroid, View } from 'react-native'
 import mailImg from '../../assets/images/mail.png';
 import googleImg from '../../assets/images/google.png';
@@ -10,8 +10,10 @@ import axios from 'axios'
 import Logo from '../../assets/images/hop.png'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
+import PhoneInput from 'react-native-phone-number-input';
 
 const RootLayout = () => {
+  const phoneInput = useRef(null);
 
   const [methods] = useState([{ name: "Continue with Email", img: mailImg }, { name: "Continue with Google", img: googleImg }, { name: "Continue with Apple", img: appleImg }])
   const [number, setNumber] = useState(null)
@@ -64,12 +66,10 @@ const RootLayout = () => {
       <Text style={indexstyle.or}>Or</Text>
       <Text style={[indexstyle.numberTxt, { width: "100%" }]}>Enter your mobile number</Text>
 
-      <View style={[indexstyle.phoneContainer, { width: "100%" }]}>
-        <View style={indexstyle.country}>
-          <Text>US</Text>
-        </View>
-        <TextInput value={number} onChangeText={setNumber} keyboardType='phone-pad' style={[indexstyle.input, { flex: 1 }]} placeholder='+91 2335665456' />
+      <View style={{marginTop:10}}>
+        <PhoneInput flagButtonStyle={{ borderRadius: 10}} textContainerStyle={{ backgroundColor: "#f1f1f1", borderRadius: 10 }} textInputStyle={{ backgroundColor: "#f1f1f1", borderRadius: 10 }} codeTextStyle={{ backgroundColor: "#f1f1f1", borderRadius: 10 }} containerStyle={{ backgroundColor: "#f1f1f1", borderRadius: 10,width:"100%"  }} countryPickerButtonStyle={{ backgroundColor: "#f1f1f1" }} ref={phoneInput} defaultValue={number} defaultCode="US" layout="first" onChangeText={(text) => { setNumber(text); }} onChangeFormattedText={(text) => { setNumber(text); }} autoFocus />
       </View>
+
 
       <Pressable onPress={getAccount} style={[indexstyle.btn, { width: "100%" }]}>
         <Text  style={indexstyle.btnTxt}>Continue</Text>

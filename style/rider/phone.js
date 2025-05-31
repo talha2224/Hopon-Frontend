@@ -68,7 +68,10 @@ const phoneStyle = StyleSheet.create({
         justifyContent:"center",
         alignItems:"center",
         marginTop:20,
-        borderRadius:5
+        borderRadius:5,
+        borderWidth:2,
+        borderColor:"#2666CF",
+        color:"#ffff"
     },
     btnTxt:{
         color:"#ffff",

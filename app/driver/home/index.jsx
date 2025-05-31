@@ -390,12 +390,12 @@ const Index = () => {
 
                                         <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 2, width: "100%" }}>
                                             <Text style={{ color: "#88898a" }}>Rider Name</Text>
-                                            <Text style={{ fontWeight: "600", color: isDarkTheme && "white" }}>{bookingData?.rider?.first_name + " " + bookingData?.rider?.last_name || "-"}</Text>
+                                            <Text style={{ fontWeight: "600", color: isDarkTheme && "white" }}>{bookingData?.rider?.first_name ? bookingData?.rider?.first_name :"-" }</Text>
                                         </View>
 
                                         <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 5, width: "100%" }}>
                                             <Text style={{ color: "#88898a" }}>Fare estimate</Text>
-                                            <Text style={{ fontWeight: "600", color: isDarkTheme && "white" }}>${rides?.fare}</Text>
+                                            <Text style={{ fontWeight: "600", color: isDarkTheme && "white" }}>${rides?.fare?rides?.fare:"-"}</Text>
                                         </View>
 
                                         <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 2, width: "100%" }}>

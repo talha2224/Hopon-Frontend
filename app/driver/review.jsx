@@ -23,9 +23,9 @@ const review = () => {
             <Text style={{ color: "#979292",textAlign:"center",marginTop:20 }}>I Agree to the above terms</Text>
 
 
-            <View style={[nameStyle.btn, { width: "100%" }]}>
+            <Pressable style={[nameStyle.btn, { width: "100%" }]}>
                 <Text onPress={() => router.push("/driver/success")} style={nameStyle.btnTxt}>Continue</Text>
-            </View>
+            </Pressable>
 
         </View>
     )

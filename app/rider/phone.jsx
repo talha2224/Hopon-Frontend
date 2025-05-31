@@ -1,20 +1,22 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { Pressable, Text, TextInput, ToastAndroid, View } from 'react-native'
 import nameStyle from '../../style/rider/phone'
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import PhoneInput from "react-native-phone-number-input";
 
-const phone = () => {
-    const [number,setNumber] = useState(null)
+const Phone = () => {
+    const [number, setNumber] = useState(null)
+
+    const phoneInput = useRef(null);
 
 
-
-    const onSave = async ()=>{
-        if(!number){
+    const onSave = async () => {
+        if (!number) {
             ToastAndroid.show('All Fields Are Required', ToastAndroid.SHORT);
         }
-        else{
+        else {
             await AsyncStorage.setItem("phone_number", JSON.stringify(number))
             router.push("/rider/prefernce")
         }
@@ -29,20 +31,24 @@ const phone = () => {
             <Text style={nameStyle.txt}>Confirm your information</Text>
 
 
-            <View style={[nameStyle.phoneContainer, { width: "100%" }]}>
+            {/* <View style={[nameStyle.phoneContainer, { width: "100%" }]}>
                 <View style={nameStyle.country}>
                     <Text>US</Text>
                 </View>
                 <TextInput value={number} onChangeText={setNumber} keyboardType='phone-pad' style={[nameStyle.input, { flex: 1 }]} placeholder='+91 2335665456' />
+            </View> */}
+
+            <View style={{ marginTop: 10 }}>
+                <PhoneInput flagButtonStyle={{ borderRadius: 10,}} textContainerStyle={{ backgroundColor: "#f1f1f1", borderRadius: 10, }} textInputStyle={{ backgroundColor: "#f1f1f1", borderRadius: 10 }} codeTextStyle={{ backgroundColor: "#f1f1f1", borderRadius: 10}} containerStyle={{ backgroundColor: "#f1f1f1", borderRadius: 10,width:"100%" }} countryPickerButtonStyle={{ backgroundColor: "#f1f1f1" }} ref={phoneInput} defaultValue={number} defaultCode="US" layout="first" onChangeText={(text) => { setNumber(text); }} onChangeFormattedText={(text) => { setNumber(text); }} autoFocus />
             </View>
 
 
-            <View style={[nameStyle.btn, { width: "100%" }]}>
-                <Text onPress={onSave} style={nameStyle.btnTxt}>Continue</Text>
-            </View>
+            <Pressable onPress={onSave} style={[nameStyle.btn, { width: "100%" }]}>
+                <Text style={nameStyle.btnTxt}>Continue</Text>
+            </Pressable>
 
         </View>
     )
 }
 
-export default phone
+export default Phone
